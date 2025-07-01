@@ -1,55 +1,44 @@
-from flask import Flask, request, jsonify, send_file
-from backend.transcriber import transcribe_audio_from_url
-from backend.synthesizer import generate_meta_review
-from backend.pdf_utils import convert_text_to_pdf
-import os
-import tempfile
+# main.py
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse
+import ollama
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route('/')
-def health_check():
-    return "✅ AI Review Synthesizer Backend is Running!"
+# CORS: Allow frontend to call backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace with your frontend URL for better security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route('/transcribe', methods=['POST'])
-def transcribe():
-    data = request.get_json()
-    urls = data.get("urls", [])
+# Health check route
+@app.get("/")
+def root():
+    return {"message": "✅ AI Review Synthesizer Backend is Running!"}
 
-    if not urls:
-        return jsonify({"error": "No URLs provided"}), 400
+# POST endpoint for generating meta-review
+@app.post("/generate-meta-review")
+async def generate_meta_review(request: Request):
+    data = await request.json()
+    prompt = data.get("prompt")
 
-    transcripts = []
-    for url in urls:
-        transcript = transcribe_audio_from_url(url)
-        transcripts.append(transcript)
+    if not prompt:
+        return {"error": "No prompt provided."}
 
-    return jsonify({"transcripts": transcripts})
+    def stream_response():
+        response = ollama.chat(
+            model="gemma:2b",  # or "mistral"
+            messages=[{"role": "user", "content": prompt}],
+            stream=True
+        )
+        for chunk in response:
+            content = chunk.get("message", {}).get("content", "")
+            if content:
+                yield content
 
-@app.route('/synthesize', methods=['POST'])
-def synthesize():
-    data = request.get_json()
-    transcripts = data.get("transcripts", [])
-
-    if not transcripts:
-        return jsonify({"error": "No transcripts provided"}), 400
-
-    report = generate_meta_review(transcripts)
-    return jsonify({"report": report})
-
-@app.route('/generate-pdf', methods=['POST'])
-def generate_pdf():
-    data = request.get_json()
-    text = data.get("text", "")
-
-    if not text:
-        return jsonify({"error": "No text provided"}), 400
-
-    temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    convert_text_to_pdf(text, temp_pdf.name)
-
-    return send_file(temp_pdf.name, as_attachment=True, download_name="meta-review.pdf")
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    return StreamingResponse(stream_response(), media_type="text/plain")
 
