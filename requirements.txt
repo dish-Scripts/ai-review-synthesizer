@@ -1,3 +1,4 @@
+gunicorn
 streamlit
 yt-dlp
 whisper
