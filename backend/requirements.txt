@@ -1,3 +1,7 @@
+fastapi
+uvicorn
+ollama
+starlette
 flask
 gunicorn
 streamlit
