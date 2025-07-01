@@ -35,12 +35,11 @@ Summaries:
 {combined_input}
 """
 
-    # Run LLM
-    response = ollama.chat(
-        model="gemma:2b",
-        messages=[{"role": "user", "content": prompt}],
-        stream=True  # live streaming
-    )
+response = ollama.chat(
+    model="mistral",
+    messages=[{"role": "user", "content": prompt}],
+    stream=True
+)
 
     # Save + stream to console
     with open(output_file, "w", encoding="utf-8") as f:
