@@ -1,7 +1,7 @@
 import os
 import requests
 
-BACKEND_URL = "https://ai-review-synthesizer-2.onrender.com"
+BACKEND_URL = "https://ai-review-synthesizer-3.onrender.com"
 
 def generate_meta_review(summary_folder="summaries", output_file="report.txt"):
     summaries = []

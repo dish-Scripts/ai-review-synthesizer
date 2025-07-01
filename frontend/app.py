@@ -14,6 +14,9 @@ st.set_page_config(
     page_icon="🔍"
 )
 
+API_URL = "https://ai-review-synthesizer-3.onrender.com"
+
+
 # --- Custom Styling ---
 st.markdown("""
     <style>
